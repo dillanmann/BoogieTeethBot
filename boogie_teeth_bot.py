@@ -1,5 +1,4 @@
 from io import open
-from flask import Flask
 from telegram import InlineQueryResultArticle, ParseMode, InputTextMessageContent
 from telegram.ext import Updater, InlineQueryHandler, CommandHandler
 from telegram.utils.helpers import escape_markdown
@@ -7,8 +6,6 @@ from uuid import uuid4
 import os
 import logging
 import random
-
-app = Flask(__name__)
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -58,8 +55,10 @@ def error(update, context):
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 def start_bot():
-    token = os.environ["TELEGRAM_API_TOKEN"]
-    updater = Updater(token, use_context=True)
+    TOKEN = os.environ["TELEGRAM_API_TOKEN"]
+    PORT = os.environ.get('PORT')
+    NAME = "boogie-teeth-bot"
+    updater = Updater(TOKEN, use_context=True)
     dp = updater.dispatcher
     dp.add_handler(CommandHandler("teeth", teeth))
 
@@ -70,7 +69,12 @@ def start_bot():
     dp.add_error_handler(error)
 
     logger.info("Bot starting...")
-    updater.start_polling()
+
+    # Start the webhook
+    updater.start_webhook(listen="0.0.0.0",
+                          port=int(PORT),
+                          url_path=TOKEN)
+    updater.bot.setWebhook("https://{}.herokuapp.com/{}".format(NAME, TOKEN))
 
     logger.info("Bot started successfully")
     updater.idle()
